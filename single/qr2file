@@ -36,14 +36,14 @@ DEPS.each { |dep| die "Missing #{dep}" unless installed?(dep) }
 inputs = ARGV.dup.sort!
 blob = +""
 
-STDERR.puts "reading control frame..."
+info "reading control frame..."
 
 control_data = JSON.parse qrdecode(inputs.shift, base64: false)
 
-STDERR.puts control_data
+info control_data
 
 inputs.each do |qr|
-  STDERR.puts "decoding frame #{qr}..."
+  info "decoding frame #{qr}..."
   blob << qrdecode(qr)
 end
 

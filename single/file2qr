@@ -52,7 +52,7 @@ frameno = 2
 until input.empty?
   chunk = Base64.encode64 input.slice!(0, 512)
 
-  STDERR.puts "encoding frame #{frameno}..."
+  info "encoding frame #{frameno}..."
   qrencode chunk, frameno
 
   frameno += 1
@@ -64,5 +64,5 @@ control_data = {
   framecount: frameno - 1,
 }
 
-STDERR.puts "encoding control frame..."
+info "encoding control frame..."
 qrencode control_data.to_json, 1, svg: true
