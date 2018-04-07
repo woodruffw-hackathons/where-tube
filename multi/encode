@@ -1,0 +1,119 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "base64"
+require "zlib"
+require "json"
+require "fileutils"
+
+CONFIG = {
+  frames: "frames/",
+  mosaics: "mosaics/",
+  framerate: "12",
+}.freeze
+
+DEPS = %w[qrencode ffmpeg convert montage].freeze
+
+def self.installed?(util)
+  ENV["PATH"].split(File::PATH_SEPARATOR).any? do |path|
+    File.executable?(File.join(path, util))
+  end
+end
+
+def info(msg, level: 0)
+  indent = "  " * level
+  STDERR.puts "#{indent}[+] #{msg}"
+end
+
+def die(msg, level: 0)
+  indent = "  " * level
+  STDERR.puts "#{indent}[!] #{msg}"
+  exit 1
+end
+
+def qrencode(data, frameno, svg: false)
+  png = File.join CONFIG[:frames], "frame#{"%08d" % frameno}.png"
+
+  if svg
+    svg = File.join CONFIG[:frames], "frame#{"%08d" % frameno}.svg"
+    system "qrencode", "-o", svg, "-t", "svg", "-d", "144", "-s", "6", data
+    system "convert", "-density", "500", "-resize", "846x846", svg, png
+    FileUtils.rm_f svg
+  else
+    system "qrencode", "-o", png, "-t", "png", "-d", "144", "-s", "6", data
+  end
+end
+
+def mosaic(imgs, mosaicno)
+  mosaic = File.join CONFIG[:mosaics], "mosaic#{"%08d" % mosaicno}.png"
+  system "montage", *imgs, "-tile", "4x2", "-geometry", "475x475>+2+30", mosaic
+end
+
+def build_frames!(data)
+  frameno = 2
+
+  until data.empty?
+    frame = Base64.encode64 data.slice!(0, 512)
+
+    info "Encoding frame #{frameno}...", level: 2
+
+    qrencode frame, frameno
+    frameno += 1
+  end
+
+  info "Encoding control frame...", level: 2
+
+  control_frame = {
+    frame_count: frameno - 1,
+    timestamp: Time.now.to_i,
+  }
+
+  qrencode control_frame.to_json, 1, svg: true
+end
+
+def build_mosaics!
+  frames = Dir[File.join(CONFIG[:frames], "*.png")].sort!
+
+  mosaicno = 1
+  frames.each_slice(8) do |imgs|
+    info "Building mosaic #{mosaicno}...", level: 2
+
+    mosaic(imgs, mosaicno)
+
+    mosaicno += 1
+  end
+end
+
+def stitch_mosaics!(output)
+  pattern = File.join CONFIG[:mosaics], "mosaic%8d.png"
+  system "ffmpeg", "-r", CONFIG[:framerate], "-i", pattern, "-vcodec", "libx264", output
+end
+
+info "Stage 0: Checking dependencies and setting up directories"
+
+DEPS.each { |dep| die "Missing #{dep}", level: 2 unless installed?(dep) }
+
+output = ARGV.first || "output.mp4"
+
+die "#{output} already exists", level: 2 if File.exist?(output)
+
+FileUtils.mkdir_p CONFIG[:frames]
+FileUtils.mkdir_p CONFIG[:mosaics]
+
+unless Dir.empty?(CONFIG[:frames]) && Dir.empty?(CONFIG[:mosaics])
+  die "One or more nonempty intermediate directories", level: 2
+end
+
+info "Stage 1: Generating frames"
+
+data = Zlib.deflate STDIN.read
+
+build_frames! data
+
+info "Stage 2: Building mosaics"
+
+build_mosaics!
+
+info "Stage 3: Stitching mosaics"
+
+stitch_mosaics! output
