@@ -6,4 +6,4 @@ dir="${DIR:-qr}"
 
 [[ -n "${1}" ]] || { >&2 echo "Need a file to output to."; exit 1; }
 
-ffmpeg -i "${dir}/frame%6d.png" -pix_fmt yuvj422p -vcodec libx264 "${1}"
+ffmpeg -r 12 -i "${dir}/frame%6d.png" -pix_fmt yuvj422p -vcodec libx264 "${1}"
