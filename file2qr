@@ -1,0 +1,48 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# usage: file2qr < input
+
+require "base64"
+require "zlib"
+require "fileutils"
+require "json"
+
+QR_DIR = ENV["DIR"] || "qr"
+
+def qrencode(data, frameno, svg: false)
+  png = File.join QR_DIR, "frame#{"%06d" % frameno}.png"
+
+  if svg
+    svg = File.join QR_DIR, "frame#{"%06d" % frameno}.svg"
+    system "qrencode", "-o", svg, "-t", "svg", "-d", "144", "-s", "6", "-l", "H", data
+    system "convert", "-density", "500", "-resize", "1000x1000", svg, png
+    FileUtils.rm_f svg
+  else
+    system "qrencode", "-o", png, "-t", "png", "-d", "144", "-s", "6", "-l", "H", data
+  end
+end
+
+FileUtils.mkdir_p QR_DIR
+
+input = Zlib.deflate STDIN.read
+
+frameno = 2
+
+until input.empty?
+  chunk = Base64.encode64 input.slice!(0, 512)
+
+  STDERR.puts "encoding frame #{frameno}..."
+  qrencode chunk, frameno
+
+  frameno += 1
+end
+
+# write control frame as frame0.png
+
+control_data = {
+  framecount: frameno,
+}
+
+STDERR.puts "encoding control frame..."
+qrencode control_data.to_json, 1, svg: true

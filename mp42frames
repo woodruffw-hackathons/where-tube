@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+# usage: mp42frames input.mp4
+
+dir=${DIR:-qr}
+
+mkdir -p "${dir}"
+ffmpeg -i "${1}" -vf fps=12 "${dir}/frame%06d.png"

@@ -1,0 +1,30 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# usage: qr2file *.png > output
+
+require "base64"
+require "zlib"
+require "json"
+
+def qrdecode(file, base64: true)
+  content = `zbarimg -q --raw '#{file}'`.delete("\n")
+
+  base64 ? Base64.decode64(content) : content
+end
+
+inputs = ARGV.dup.sort!
+blob = +""
+
+STDERR.puts "reading control frame..."
+
+control_data = JSON.parse qrdecode(inputs.shift, base64: false)
+
+STDERR.puts control_data
+
+inputs.each do |qr|
+  STDERR.puts "decoding frame #{qr}..."
+  blob << qrdecode(qr)
+end
+
+STDOUT.write Zlib.inflate blob
