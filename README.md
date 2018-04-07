@@ -3,6 +3,8 @@ where-tube
 
 ![where tube?](where-tube.jpg)
 
+Experiments in YouTube misery.
+
 ## Dependencies
 
 * `zbarimg`
