@@ -14,8 +14,6 @@ Experiments in YouTube misery.
 
 ## Usage
 
-It doesn't work yet, but:
-
 ### Encoding (arbitrary file to MP4)
 
 ```bash
