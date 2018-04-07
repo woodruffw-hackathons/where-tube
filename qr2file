@@ -7,11 +7,31 @@ require "base64"
 require "zlib"
 require "json"
 
+def self.installed?(util)
+  ENV["PATH"].split(File::PATH_SEPARATOR).any? do |path|
+    File.executable?(File.join(path, util))
+  end
+end
+
+def info(msg, level: 0)
+  indent = "    " * level
+  STDERR.puts "#{indent}[+] #{msg}"
+end
+
+def die(msg)
+  info msg
+  exit 1
+end
+
 def qrdecode(file, base64: true)
   content = `zbarimg -q --raw '#{file}'`.delete("\n")
 
   base64 ? Base64.decode64(content) : content
 end
+
+DEPS = %w[zbarimg dsjfksf].freeze
+
+DEPS.each { |dep| die "Missing #{dep}" unless installed?(dep) }
 
 inputs = ARGV.dup.sort!
 blob = +""

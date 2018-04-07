@@ -4,5 +4,7 @@
 
 dir=${DIR:-qr}
 
+[[ -f "${1}" ]] || { >&2 echo "Input file needed."; exit 1; }
+
 mkdir -p "${dir}"
 ffmpeg -i "${1}" "${dir}/frame%06d.png"

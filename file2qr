@@ -8,7 +8,21 @@ require "zlib"
 require "fileutils"
 require "json"
 
-QR_DIR = ENV["DIR"] || "qr"
+def self.installed?(util)
+  ENV["PATH"].split(File::PATH_SEPARATOR).any? do |path|
+    File.executable?(File.join(path, util))
+  end
+end
+
+def info(msg, level: 0)
+  indent = "    " * level
+  STDERR.puts "#{indent}[+] #{msg}"
+end
+
+def die(msg)
+  info msg
+  exit 1
+end
 
 def qrencode(data, frameno, svg: false)
   png = File.join QR_DIR, "frame#{"%06d" % frameno}.png"
@@ -22,6 +36,12 @@ def qrencode(data, frameno, svg: false)
     system "qrencode", "-o", png, "-t", "png", "-d", "144", "-s", "6", data
   end
 end
+
+DEPS = %w[qrencode convert].freeze
+
+DEPS.each { |dep| die "Missing #{dep}" unless installed?(dep) }
+
+QR_DIR = ENV["DIR"] || "qr"
 
 FileUtils.mkdir_p QR_DIR
 
