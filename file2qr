@@ -15,11 +15,11 @@ def qrencode(data, frameno, svg: false)
 
   if svg
     svg = File.join QR_DIR, "frame#{"%06d" % frameno}.svg"
-    system "qrencode", "-o", svg, "-t", "svg", "-d", "144", "-s", "6", "-l", "H", data
-    system "convert", "-density", "500", "-resize", "1000x1000", svg, png
+    system "qrencode", "-o", svg, "-t", "svg", "-d", "144", "-s", "6", data
+    system "convert", "-density", "500", "-resize", "846x846", svg, png
     FileUtils.rm_f svg
   else
-    system "qrencode", "-o", png, "-t", "png", "-d", "144", "-s", "6", "-l", "H", data
+    system "qrencode", "-o", png, "-t", "png", "-d", "144", "-s", "6", data
   end
 end
 
@@ -41,7 +41,7 @@ end
 # write control frame as frame0.png
 
 control_data = {
-  framecount: frameno,
+  framecount: frameno - 1,
 }
 
 STDERR.puts "encoding control frame..."

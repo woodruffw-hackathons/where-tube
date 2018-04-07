@@ -2,4 +2,4 @@
 
 # usage: frame2mp4 output.mp4
 
-ffmpeg -r 12 -i "qr/frame%6d.png" -vcodec libx264 "${1}"
+ffmpeg -i "qr/frame%6d.png" -vcodec libx264 "${1}"

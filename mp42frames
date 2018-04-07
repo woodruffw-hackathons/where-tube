@@ -5,4 +5,4 @@
 dir=${DIR:-qr}
 
 mkdir -p "${dir}"
-ffmpeg -i "${1}" -vf fps=12 "${dir}/frame%06d.png"
+ffmpeg -i "${1}" "${dir}/frame%06d.png"
